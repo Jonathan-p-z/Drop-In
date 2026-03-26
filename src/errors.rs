@@ -4,39 +4,33 @@ use axum::{
     Json,
 };
 use serde::Serialize;
-use std::fmt;
+use thiserror::Error;
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum AppError {
+    #[error("Config error: {0}")]
     Config(String),
-    Database(sqlx::Error),
-    Jwt(jsonwebtoken::errors::Error),
+
+    #[error("Database error: {0}")]
+    Database(#[from] sqlx::Error),
+
+    #[error("JWT error: {0}")]
+    Jwt(#[from] jsonwebtoken::errors::Error),
+
+    #[error("Not found: {0}")]
+    NotFound(String),
+
+    #[error("Unauthorized: {0}")]
+    Unauthorized(String),
+
+    #[error("Forbidden: {0}")]
+    Forbidden(String),
+
+    #[error("Validation error: {0}")]
+    Validation(String),
+
+    #[error("Internal error: {0}")]
     Internal(String),
-}
-
-impl fmt::Display for AppError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            AppError::Config(message) => write!(f, "Config error: {}", message),
-            AppError::Database(err) => write!(f, "Database error: {}", err),
-            AppError::Jwt(err) => write!(f, "JWT error: {}", err),
-            AppError::Internal(message) => write!(f, "Internal error: {}", message),
-        }
-    }
-}
-
-impl std::error::Error for AppError {}
-
-impl From<sqlx::Error> for AppError {
-    fn from(err: sqlx::Error) -> Self {
-        Self::Database(err)
-    }
-}
-
-impl From<jsonwebtoken::errors::Error> for AppError {
-    fn from(err: jsonwebtoken::errors::Error) -> Self {
-        Self::Jwt(err)
-    }
 }
 
 #[derive(Serialize)]
@@ -46,12 +40,15 @@ struct ErrorResponse {
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
-        // Mapping centralise: handlers propres et evolutions plus sures.
         let (status, message) = match &self {
-            AppError::Config(message) => (StatusCode::INTERNAL_SERVER_ERROR, message.clone()),
-            AppError::Database(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Database error".to_string()),
-            AppError::Jwt(_) => (StatusCode::UNAUTHORIZED, "Invalid token".to_string()),
-            AppError::Internal(message) => (StatusCode::INTERNAL_SERVER_ERROR, message.clone()),
+            AppError::Config(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg.clone()),
+            AppError::Database(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Erreur base de données".to_string()),
+            AppError::Jwt(_) => (StatusCode::UNAUTHORIZED, "Token invalide".to_string()),
+            AppError::NotFound(msg) => (StatusCode::NOT_FOUND, msg.clone()),
+            AppError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, msg.clone()),
+            AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, msg.clone()),
+            AppError::Validation(msg) => (StatusCode::BAD_REQUEST, msg.clone()),
+            AppError::Internal(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg.clone()),
         };
 
         (status, Json(ErrorResponse { error: message })).into_response()

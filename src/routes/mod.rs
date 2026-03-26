@@ -1,19 +1,35 @@
-use axum::{routing::get, Router};
+use axum::{
+    middleware,
+    routing::{get, post},
+    Router,
+};
 use sqlx::PgPool;
+use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
 use crate::handlers;
 
 #[derive(Clone)]
 pub struct AppState {
-    // Etat partage volontairement petit; on garde le clone peu couteux.
     pub pool: PgPool,
     pub jwt_secret: String,
+    pub jwt_expiry_hours: u64,
 }
 
 pub fn router(state: AppState) -> Router {
-    // Table de routes minimale et lisible; les handlers font le gros du travail.
+    let protected = Router::new()
+        .route("/api/users/me", get(handlers::users::me))
+        .route_layer(middleware::from_fn_with_state(
+            state.clone(),
+            crate::middleware::auth::require_auth,
+        ));
+
     Router::new()
         .route("/health", get(handlers::health))
         .route("/ws", get(handlers::ws_handler))
+        .route("/api/auth/register", post(handlers::auth::register))
+        .route("/api/auth/login", post(handlers::auth::login))
+        .merge(protected)
+        .layer(TraceLayer::new_for_http())
+        .layer(CorsLayer::permissive())
         .with_state(state)
 }

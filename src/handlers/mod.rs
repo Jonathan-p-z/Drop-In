@@ -1,5 +1,11 @@
+pub mod auth;
+pub mod users;
+
 use axum::{
-    extract::{ws::WebSocket, ws::WebSocketUpgrade, State},
+    extract::{
+        ws::{WebSocket, WebSocketUpgrade},
+        State,
+    },
     http::StatusCode,
     response::IntoResponse,
     Json,
@@ -13,12 +19,10 @@ pub async fn health(State(_state): State<AppState>) -> impl IntoResponse {
 }
 
 pub async fn ws_handler(ws: WebSocketUpgrade) -> impl IntoResponse {
-    // Le WebSocket demarre ici; le detail du protocole est dans la boucle dessous.
     ws.on_upgrade(handle_socket)
 }
 
 async fn handle_socket(mut socket: WebSocket) {
-    // Boucle provisoire; elle garde la connexion vivante pour la suite.
     while let Some(Ok(message)) = socket.recv().await {
         if matches!(message, axum::extract::ws::Message::Close(_)) {
             break;
