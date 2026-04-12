@@ -26,6 +26,21 @@ async fn main() -> Result<(), AppError> {
         jwt_expiry_hours: settings.jwt_expiry_hours,
     };
 
+    // Tâche de fond : réinitialise toutes les heures les statuts expirés
+    let pool_bg = state.pool.clone();
+    tokio::spawn(async move {
+        loop {
+            match handlers::bin_reports::reset_expired_bin_status(&pool_bg).await {
+                Ok(n) if n > 0 => {
+                    tracing::info!("{} statut(s) de poubelle réinitialisé(s) à 'unknown'", n)
+                }
+                Ok(_) => {}
+                Err(e) => tracing::error!("Erreur réinitialisation des statuts : {}", e),
+            }
+            tokio::time::sleep(tokio::time::Duration::from_secs(3600)).await;
+        }
+    });
+
     let app = routes::router(state);
     let addr = format!("{}:{}", settings.server_host, settings.server_port);
 
