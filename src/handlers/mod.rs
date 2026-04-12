@@ -1,4 +1,6 @@
 pub mod auth;
+pub mod bin_reports;
+pub mod bins;
 pub mod users;
 
 use axum::{
