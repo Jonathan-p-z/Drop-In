@@ -1,158 +1,154 @@
 # Drop'In
 
-Drop'In, c'est une API backend pour une application de gestion collaborative des poubelles et points de collecte. L'idée : permettre aux gens de localiser, signaler et enrichir une carte communautaire de conteneurs de déchets — recyclage, organique, tout-venant — autour d'eux.
-
-Le projet est en Rust avec Axum, tourne sur PostgreSQL avec PostGIS pour les requêtes géographiques, et utilise du JWT pour l'authentification.
+Une app mobile pour ne plus chercher où jeter ses déchets. Drop'In permet de localiser les poubelles et points de collecte autour de soi, de signaler leur état, et d'en ajouter de nouvelles. Le tout de façon collaborative — chaque contribution améliore la carte pour tout le monde.
 
 ---
 
-## Ce que ça fait (pour l'instant)
+## Ce que ça fait
 
-- Inscription et connexion d'utilisateurs avec hashage bcrypt et tokens JWT
-- Endpoint protégé pour récupérer le profil de l'utilisateur connecté
-- Schéma de base de données prêt pour les poubelles (localisation GPS, type de déchet, statut, photo, vérification communautaire)
-- Système de points pour gamifier les contributions
-- WebSocket connecté (les handlers temps réel arrivent)
-- Migrations auto au démarrage
+- Carte interactive avec les poubelles autour de toi (OpenStreetMap)
+- Filtrer par type de déchet (verre, plastique, papier, bio...)
+- Signaler une poubelle pleine ou vide — le statut se met à jour automatiquement après 3 signalements concordants
+- Ajouter une nouvelle poubelle en un tap
+- Système de points pour récompenser les contributions
+- Compte utilisateur avec profil et historique
 
 ---
 
 ## Stack
 
+**Backend**
+
 | Couche | Techno |
 |--------|--------|
 | Langage | Rust (2021) |
 | Framework web | Axum 0.7 |
-| Runtime async | Tokio |
 | Base de données | PostgreSQL + PostGIS |
-| ORM / queries | SQLx |
-| Auth | JWT (`jsonwebtoken`) + Bcrypt |
-| Sérialisation | Serde JSON |
-| Logs | Tracing |
+| Requêtes SQL | SQLx |
+| Auth | JWT + Bcrypt |
+| Runtime async | Tokio |
+
+**Frontend**
+
+| Couche | Techno |
+|--------|--------|
+| Framework | Flutter |
+| Carte | flutter_map + OpenStreetMap |
+| État | Riverpod |
+| Navigation | go_router |
+| HTTP | Dio |
 
 ---
 
-## Prérequis
+## Lancer le projet en local
 
-- [Rust](https://rustup.rs/) (stable)
-- PostgreSQL avec l'extension **PostGIS** installée
-- Une base de données `dropin` créée
+### Prérequis
 
----
+- [Rust](https://rustup.rs/) stable
+- [Flutter](https://flutter.dev) 3.x
+- PostgreSQL avec l'extension PostGIS
 
-## Installation
+La façon la plus simple de démarrer PostgreSQL + PostGIS sans l'installer :
 
 ```bash
-git clone <url-du-repo>
+docker run -d \
+  --name dropin-db \
+  -e POSTGRES_USER=user \
+  -e POSTGRES_PASSWORD=password \
+  -e POSTGRES_DB=dropin \
+  -p 5432:5432 \
+  postgis/postgis:16-3.4
+```
+
+### Backend
+
+```bash
+git clone https://github.com/Jonathan-p-z/Drop-In.git
 cd Drop\'In
-cp .env.example .env
-```
-
-Édite le `.env` avec tes valeurs :
-
-```env
-DATABASE_URL=postgres://user:password@localhost:5432/dropin
-JWT_SECRET=une-clé-secrète-suffisamment-longue
-SERVER_HOST=127.0.0.1
-SERVER_PORT=3000
-JWT_EXPIRY_HOURS=24    # optionnel, 24h par défaut
-```
-
-Lance le serveur :
-
-```bash
+cp .env.example .env  # puis éditer avec tes valeurs
 cargo run
 ```
 
-Les migrations sont appliquées automatiquement au démarrage. Le serveur écoute sur `http://127.0.0.1:3000` par défaut.
+Le serveur démarre sur `http://127.0.0.1:3000`. Les migrations SQL s'appliquent automatiquement au démarrage.
+
+Variables d'environnement à configurer dans `.env` :
+
+```env
+DATABASE_URL=postgres://user:password@localhost:5432/dropin
+JWT_SECRET=une-clé-secrète-longue-et-aléatoire
+SERVER_HOST=127.0.0.1
+SERVER_PORT=3000
+JWT_EXPIRY_HOURS=24
+```
+
+### Frontend
+
+```bash
+cd frontend
+flutter pub get
+flutter run
+```
+
+Sur émulateur Android, l'app pointe vers `http://10.0.2.2:3000`. Sur Linux desktop, vers `http://127.0.0.1:3000`.
 
 ---
 
-## Routes disponibles
+## API
 
 ### Publiques
 
 | Méthode | Route | Description |
 |---------|-------|-------------|
-| `GET` | `/health` | Vérifie que le serveur tourne |
-| `GET` | `/ws` | Connexion WebSocket |
+| `GET` | `/health` | État du serveur |
 | `POST` | `/api/auth/register` | Créer un compte |
 | `POST` | `/api/auth/login` | Se connecter |
+| `GET` | `/api/bins` | Lister les poubelles (filtrables par position, type, statut) |
+| `GET` | `/api/bins/:id` | Détail d'une poubelle |
 
-### Protégées (Bearer token requis)
+### Protégées (JWT requis)
 
 | Méthode | Route | Description |
 |---------|-------|-------------|
-| `GET` | `/api/users/me` | Récupérer son profil |
+| `GET` | `/api/users/me` | Profil de l'utilisateur connecté |
+| `POST` | `/api/bins` | Ajouter une poubelle |
+| `POST` | `/api/bins/:id/report` | Signaler une poubelle |
 
 ---
 
-## Exemples de requêtes
-
-**Inscription**
-```bash
-curl -X POST http://localhost:3000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "alice",
-    "email": "alice@example.com",
-    "password": "motdepasse123"
-  }'
-```
-
-**Connexion**
-```bash
-curl -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "alice@example.com",
-    "password": "motdepasse123"
-  }'
-```
-
-Les deux endpoints retournent un token JWT et les infos de l'utilisateur.
-
-**Profil**
-```bash
-curl http://localhost:3000/api/users/me \
-  -H "Authorization: Bearer <ton_token>"
-```
-
----
-
-## Structure du projet
+## Structure
 
 ```
-src/
-├── main.rs            # Point d'entrée, démarrage du serveur
-├── config.rs          # Lecture des variables d'environnement
-├── db.rs              # Initialisation du pool de connexions et migrations
-├── errors.rs          # Enum d'erreurs avec mapping HTTP
-├── handlers/
-│   ├── auth.rs        # Inscription et connexion
-│   ├── users.rs       # Endpoints utilisateurs
-│   └── mod.rs         # Health check et WebSocket
-├── middleware/
-│   └── auth.rs        # Validation JWT
-├── models/            # Structs de données (BDD + requêtes/réponses)
-└── routes/            # Définition des routes Axum
-
-migrations/
-├── 001_extensions.sql # UUID + PostGIS
-├── 002_users.sql      # Table users
-├── 003_bins.sql       # Table bins (avec géométrie PostGIS)
-└── 004_bin_types.sql  # Table des types de déchets par poubelle
+Drop'In/
+├── src/
+│   ├── main.rs
+│   ├── config.rs
+│   ├── db.rs
+│   ├── errors.rs
+│   ├── handlers/
+│   │   ├── auth.rs          # Inscription, connexion
+│   │   ├── users.rs         # Profil utilisateur
+│   │   ├── bins.rs          # CRUD poubelles + recherche géographique
+│   │   └── bin_reports.rs   # Signalements + réinitialisation automatique des statuts
+│   ├── middleware/
+│   │   └── auth.rs          # Validation JWT
+│   ├── models/              # Structs partagés (DB + API)
+│   └── routes/              # Définition des routes Axum
+│
+├── migrations/
+│   ├── 001_extensions.sql   # UUID + PostGIS
+│   ├── 002_users.sql
+│   ├── 003_bins.sql         # Géométrie PostGIS (Point 4326)
+│   ├── 004_bin_types.sql
+│   └── 005_bin_reports.sql
+│
+└── frontend/
+    └── lib/
+        ├── core/            # Thème, couleurs, ApiService
+        ├── features/
+        │   ├── auth/        # Login, inscription, provider
+        │   └── map/         # Carte, marqueurs, filtres, signalements
+        └── shared/          # Widgets réutilisables
 ```
-
----
-
-## Schéma de base de données
-
-**`users`** — Les comptes utilisateurs. Contient un champ `points` pour suivre les contributions communautaires.
-
-**`bins`** — Les poubelles. Stocke la position géographique en `GEOMETRY(Point, 4326)`, une photo optionnelle, une adresse, un statut et un flag `is_verified` pour la validation communautaire.
-
-**`bin_types`** — Les types de déchets associés à chaque poubelle (recyclable, organique, tout-venant, etc.). Relation N-1 vers `bins`.
 
 ---
 
