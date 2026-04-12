@@ -1,0 +1,45 @@
+name: dropin
+description: Application citoyenne de gestion collaborative des déchets en France.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Gestion d'état réactive
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # Client HTTP
+  dio: ^5.4.3
+
+  # Navigation déclarative
+  go_router: ^13.2.0
+
+  # Persistance des préférences simples
+  shared_preferences: ^2.2.3
+
+  # Stockage sécurisé du token JWT
+  flutter_secure_storage: ^9.0.0
+
+  # Carte interactive OpenStreetMap
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+
+  # Géolocalisation GPS
+  geolocator: ^13.0.2
+  permission_handler: ^11.3.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  build_runner: ^2.4.9
+  riverpod_generator: ^2.4.0
+
+flutter:
+  uses-material-design: true
