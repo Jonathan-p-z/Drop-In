@@ -13,7 +13,8 @@ const VALID_WASTE_TYPES: &[&str] = &[
     "glass", "plastic", "paper", "cardboard", "bio", "electronic", "metal", "other",
 ];
 
-// Struct intermédiaire pour les résultats SQL incluant les types de déchets agrégés
+const POINTS_PER_BIN_ADDED: i32 = 10;
+
 #[derive(sqlx::FromRow)]
 struct BinRow {
     id: Uuid,
@@ -49,7 +50,6 @@ impl From<BinRow> for BinResponse {
     }
 }
 
-// Fragment SQL réutilisable — sélectionne les poubelles avec leurs types de déchets agrégés
 const BIN_SELECT: &str =
     "SELECT b.id, b.added_by,
      ST_Y(b.location) AS latitude, ST_X(b.location) AS longitude,
@@ -58,7 +58,6 @@ const BIN_SELECT: &str =
      COALESCE(array_agg(bt.waste_type) FILTER (WHERE bt.waste_type IS NOT NULL), ARRAY[]::varchar[]) AS waste_types
      FROM bins b LEFT JOIN bin_types bt ON bt.bin_id = b.id";
 
-// Retourne les poubelles avec filtres optionnels (distance, type de déchet, statut)
 pub async fn get_bins(
     State(state): State<AppState>,
     Query(filters): Query<BinFilters>,
@@ -85,7 +84,6 @@ pub async fn get_bins(
         qb.push_bind(status.clone());
     }
     qb.push(" GROUP BY b.id");
-    // Tri par distance croissante si les coordonnées sont fournies
     if let (Some(lat), Some(lng)) = (filters.latitude, filters.longitude) {
         qb.push(" ORDER BY ST_Distance(b.location::geography, ST_SetSRID(ST_MakePoint(");
         qb.push_bind(lng);
@@ -98,7 +96,6 @@ pub async fn get_bins(
     Ok(Json(bins.into_iter().map(BinResponse::from).collect::<Vec<_>>()))
 }
 
-// Retourne une poubelle par son identifiant
 pub async fn get_bin(
     State(state): State<AppState>,
     Path(bin_id): Path<Uuid>,
@@ -112,7 +109,6 @@ pub async fn get_bin(
     Ok(Json(BinResponse::from(bin)))
 }
 
-// Crée une poubelle avec ses types de déchets et attribue 10 points au créateur
 pub async fn create_bin(
     State(state): State<AppState>,
     Extension(user_id): Extension<Uuid>,
@@ -137,7 +133,6 @@ pub async fn create_bin(
         }
     }
 
-    // Transaction pour garantir l'atomicité (bin + types + points)
     let mut tx = state.pool.begin().await?;
 
     let bin = sqlx::query_as::<_, Bin>(
@@ -163,8 +158,9 @@ pub async fn create_bin(
             .await?;
     }
 
-    sqlx::query("UPDATE users SET points = points + 10 WHERE id = $1")
+    sqlx::query("UPDATE users SET points = points + $2 WHERE id = $1")
         .bind(user_id)
+        .bind(POINTS_PER_BIN_ADDED)
         .execute(&mut *tx)
         .await?;
 
