@@ -9,6 +9,7 @@ import 'features/auth/screens/register_screen.dart';
 import 'features/map/screens/map_screen.dart';
 import 'features/scanner/screens/scanner_screen.dart';
 import 'features/challenges/screens/challenges_screen.dart';
+import 'features/leaderboard/screens/leaderboard_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
 
 void main() {
@@ -78,6 +79,7 @@ class _DropInAppState extends ConsumerState<DropInApp> {
       routes: [
         GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
         GoRoute(path: '/register', builder: (_, __) => const RegisterScreen()),
+        GoRoute(path: '/leaderboard', builder: (_, __) => const LeaderboardScreen()),
 
         // Shell partagé — ajoute la BottomNavigationBar sur les écrans protégés
         ShellRoute(
