@@ -1,6 +1,10 @@
 pub mod auth;
 pub mod bin_reports;
 pub mod bins;
+pub mod challenges;
+pub mod leaderboard;
+pub mod photos;
+pub mod scanner;
 pub mod users;
 
 use axum::{
