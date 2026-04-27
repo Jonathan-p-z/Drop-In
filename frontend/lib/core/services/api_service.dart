@@ -90,6 +90,12 @@ class ApiService {
   Future<Response<T>> put<T>(String path, {Object? data}) =>
       _dio.put(path, data: data);
 
+  Future<Response<T>> patch<T>(String path, {Object? data}) =>
+      _dio.patch(path, data: data);
+
+  Future<Response<T>> postFormData<T>(String path, FormData formData) =>
+      _dio.post(path, data: formData);
+
   Future<Response<T>> delete<T>(String path) => _dio.delete(path);
 }
 
