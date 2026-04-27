@@ -9,12 +9,14 @@ pub struct Settings {
     pub jwt_expiry_hours: u64,
     pub server_host: String,
     pub server_port: u16,
+    pub gemini_api_key: String,
 }
 
 impl Settings {
     pub fn from_env() -> Result<Self, AppError> {
         let database_url = get_env("DATABASE_URL")?;
         let jwt_secret = get_env("JWT_SECRET")?;
+        let gemini_api_key = get_env("GEMINI_API_KEY")?;
 
         let jwt_expiry_hours = env::var("JWT_EXPIRY_HOURS")
             .unwrap_or_else(|_| "24".to_string())
@@ -34,6 +36,7 @@ impl Settings {
             jwt_expiry_hours,
             server_host,
             server_port,
+            gemini_api_key,
         })
     }
 }

@@ -24,6 +24,8 @@ async fn main() -> Result<(), AppError> {
         pool,
         jwt_secret: settings.jwt_secret.clone(),
         jwt_expiry_hours: settings.jwt_expiry_hours,
+        http_client: reqwest::Client::new(),
+        gemini_api_key: settings.gemini_api_key.clone(),
     };
 
     // Tâche de fond : réinitialise toutes les heures les statuts expirés
@@ -40,6 +42,10 @@ async fn main() -> Result<(), AppError> {
             tokio::time::sleep(tokio::time::Duration::from_secs(3600)).await;
         }
     });
+
+    tokio::fs::create_dir_all("uploads")
+        .await
+        .map_err(|err| AppError::Internal(format!("Impossible de créer le dossier uploads : {}", err)))?;
 
     let app = routes::router(state);
     let addr = format!("{}:{}", settings.server_host, settings.server_port);
