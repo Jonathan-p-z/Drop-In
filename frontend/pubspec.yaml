@@ -34,6 +34,9 @@ dependencies:
   geolocator: ^13.0.2
   permission_handler: ^11.3.1
 
+  # Sélection de photo depuis la galerie
+  image_picker: ^1.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
