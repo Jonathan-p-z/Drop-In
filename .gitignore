@@ -1,0 +1,78 @@
+# ────────────────────────────────────────────
+# Rust / Cargo
+# ────────────────────────────────────────────
+/target/
+# Cargo.lock est commité pour les binaires (reproductibilité des builds)
+
+# ────────────────────────────────────────────
+# Variables d'environnement — ne jamais committer
+# ────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ────────────────────────────────────────────
+# Uploads utilisateurs (avatars, photos de poubelles)
+# ────────────────────────────────────────────
+uploads/
+
+# SQLx offline query cache (généré par cargo sqlx prepare)
+.sqlx/
+
+# ────────────────────────────────────────────
+# Flutter / Dart
+# ────────────────────────────────────────────
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.packages
+frontend/build/
+frontend/.fvm/
+# pubspec.lock est commité pour les applications Flutter (reproductibilité)
+
+# Fichiers générés par build_runner / riverpod_generator
+frontend/**/*.g.dart
+frontend/**/*.freezed.dart
+
+# Android
+frontend/android/.gradle/
+frontend/android/local.properties
+frontend/android/key.properties
+frontend/android/app/google-services.json
+frontend/android/*/GeneratedPluginRegistrant.java
+
+# iOS
+frontend/ios/.symlinks/
+frontend/ios/Flutter/flutter_export_environment.sh
+frontend/ios/Flutter/Generated.xcconfig
+frontend/ios/Flutter/ephemeral/
+frontend/ios/Pods/
+frontend/ios/GoogleService-Info.plist
+
+# Linux desktop
+frontend/linux/flutter/ephemeral/
+frontend/linux/flutter/generated_plugin_registrant.cc
+frontend/linux/flutter/generated_plugin_registrant.h
+frontend/linux/flutter/generated_plugins.cmake
+
+# macOS
+frontend/macos/Flutter/ephemeral/
+frontend/macos/Flutter/Generated.xcconfig
+
+# Web
+frontend/web/
+
+# ────────────────────────────────────────────
+# IDE
+# ────────────────────────────────────────────
+.idea/
+.vscode/
+*.iml
+
+# ────────────────────────────────────────────
+# OS
+# ────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+seed.sql
