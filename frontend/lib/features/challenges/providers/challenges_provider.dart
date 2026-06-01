@@ -46,33 +46,17 @@ class ChallengeEntry {
     );
   }
 
-  ChallengeEntry copyWith({int? progress, DateTime? completedAt, bool? isCompleted}) {
-    return ChallengeEntry(
-      id: id,
-      title: title,
-      description: description,
-      challengeType: challengeType,
-      targetCount: targetCount,
-      pointsReward: pointsReward,
-      expiresAt: expiresAt,
-      progress: progress ?? this.progress,
-      completedAt: completedAt ?? this.completedAt,
-      isCompleted: isCompleted ?? this.isCompleted,
-    );
-  }
 }
 
 class ChallengesState {
   final List<ChallengeEntry> challenges;
   final bool isLoading;
   final String? error;
-  final Set<String> progressing;
 
   const ChallengesState({
     this.challenges = const [],
     this.isLoading = false,
     this.error,
-    this.progressing = const {},
   });
 
   ChallengesState copyWith({
@@ -80,13 +64,11 @@ class ChallengesState {
     bool? isLoading,
     String? error,
     bool clearError = false,
-    Set<String>? progressing,
   }) {
     return ChallengesState(
       challenges: challenges ?? this.challenges,
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
-      progressing: progressing ?? this.progressing,
     );
   }
 }
@@ -112,34 +94,6 @@ class ChallengesNotifier extends StateNotifier<ChallengesState> {
       state = state.copyWith(challenges: challenges, isLoading: false);
     } on DioException catch (e) {
       state = state.copyWith(isLoading: false, error: _extractError(e));
-    }
-  }
-
-  Future<void> progress(String challengeId) async {
-    final busy = {...state.progressing, challengeId};
-    state = state.copyWith(progressing: busy);
-    try {
-      final response = await _api.post<Map<String, dynamic>>(
-        '/api/challenges/$challengeId/progress',
-      );
-      final data = response.data!;
-      final newProgress = (data['progress'] as num).toInt();
-      final isCompleted = data['is_completed'] as bool;
-
-      final updated = state.challenges.map((c) {
-        if (c.id != challengeId) return c;
-        return c.copyWith(
-          progress: newProgress,
-          completedAt: isCompleted ? DateTime.now() : c.completedAt,
-          isCompleted: isCompleted,
-        );
-      }).toList();
-
-      final next = {...state.progressing}..remove(challengeId);
-      state = state.copyWith(challenges: updated, progressing: next);
-    } on DioException catch (e) {
-      final next = {...state.progressing}..remove(challengeId);
-      state = state.copyWith(progressing: next, error: _extractError(e));
     }
   }
 

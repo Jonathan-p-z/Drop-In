@@ -42,7 +42,6 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
       body: _Body(
         state: state,
         onRetry: () => ref.read(challengesProvider.notifier).fetch(),
-        onProgress: (id) => ref.read(challengesProvider.notifier).progress(id),
       ),
     );
   }
@@ -51,12 +50,10 @@ class _ChallengesScreenState extends ConsumerState<ChallengesScreen> {
 class _Body extends StatelessWidget {
   final ChallengesState state;
   final VoidCallback onRetry;
-  final void Function(String id) onProgress;
 
   const _Body({
     required this.state,
     required this.onRetry,
-    required this.onProgress,
   });
 
   @override
@@ -100,8 +97,6 @@ class _Body extends StatelessWidget {
           _Section(
             type: type,
             challenges: state.challenges.where((c) => c.challengeType == type).toList(),
-            progressing: state.progressing,
-            onProgress: onProgress,
           ),
       ],
     );
@@ -111,14 +106,10 @@ class _Body extends StatelessWidget {
 class _Section extends StatelessWidget {
   final String type;
   final List<ChallengeEntry> challenges;
-  final Set<String> progressing;
-  final void Function(String id) onProgress;
 
   const _Section({
     required this.type,
     required this.challenges,
-    required this.progressing,
-    required this.onProgress,
   });
 
   String get _label => switch (type) {
@@ -146,11 +137,7 @@ class _Section extends StatelessWidget {
           ),
         ),
         for (final challenge in challenges)
-          _ChallengeCard(
-            challenge: challenge,
-            isBusy: progressing.contains(challenge.id),
-            onProgress: () => onProgress(challenge.id),
-          ),
+          _ChallengeCard(challenge: challenge),
         const SizedBox(height: 8),
       ],
     );
@@ -159,14 +146,8 @@ class _Section extends StatelessWidget {
 
 class _ChallengeCard extends StatelessWidget {
   final ChallengeEntry challenge;
-  final bool isBusy;
-  final VoidCallback onProgress;
 
-  const _ChallengeCard({
-    required this.challenge,
-    required this.isBusy,
-    required this.onProgress,
-  });
+  const _ChallengeCard({required this.challenge});
 
   @override
   Widget build(BuildContext context) {
@@ -201,8 +182,6 @@ class _ChallengeCard extends StatelessWidget {
             pointsReward: challenge.pointsReward,
             ratio: ratio,
             isCompleted: completed,
-            isBusy: isBusy,
-            onProgress: onProgress,
           ),
           const SizedBox(height: 8),
           _ExpiresLabel(expiresAt: challenge.expiresAt),
@@ -259,8 +238,6 @@ class _ProgressRow extends StatelessWidget {
   final int pointsReward;
   final double ratio;
   final bool isCompleted;
-  final bool isBusy;
-  final VoidCallback onProgress;
 
   const _ProgressRow({
     required this.progress,
@@ -268,8 +245,6 @@ class _ProgressRow extends StatelessWidget {
     required this.pointsReward,
     required this.ratio,
     required this.isCompleted,
-    required this.isBusy,
-    required this.onProgress,
   });
 
   @override
@@ -316,29 +291,6 @@ class _ProgressRow extends StatelessWidget {
             ],
           ),
         ),
-        if (!isCompleted) ...[
-          const SizedBox(width: 12),
-          SizedBox(
-            height: 36,
-            child: ElevatedButton(
-              onPressed: isBusy ? null : onProgress,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: isBusy
-                  ? const SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.primaryDeep,
-                      ),
-                    )
-                  : const Text('+1', style: TextStyle(fontWeight: FontWeight.w700)),
-            ),
-          ),
-        ],
       ],
     );
   }

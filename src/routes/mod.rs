@@ -21,10 +21,6 @@ pub struct AppState {
 pub fn router(state: AppState) -> Router {
     let protected = Router::new()
         .route("/api/challenges", get(handlers::challenges::get_challenges))
-        .route(
-            "/api/challenges/:id/progress",
-            post(handlers::challenges::update_progress),
-        )
         .route("/api/users/me", get(handlers::users::me))
         .route("/api/users/me", patch(handlers::users::patch_me))
         .route(
