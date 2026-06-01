@@ -23,9 +23,15 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   final _mapController = MapController();
   Timer? _debounce;
 
-  // Position initiale : France métropolitaine avant que le GPS réponde
-  static const _defaultCenter = LatLng(46.8, 2.3);
+  static const _defaultCenter = LatLng(46.2276, 2.2137);
   static const _defaultZoom = 6.0;
+  static const _minZoom = 5.5;
+  static const _maxZoom = 18.0;
+  // Bounds de la France métropolitaine
+  static final _franceBounds = LatLngBounds(
+    const LatLng(41.3, -5.5),
+    const LatLng(51.1, 9.6),
+  );
 
   @override
   void initState() {
@@ -95,6 +101,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             options: MapOptions(
               initialCenter: _defaultCenter,
               initialZoom: _defaultZoom,
+              minZoom: _minZoom,
+              maxZoom: _maxZoom,
+              cameraConstraint: CameraConstraint.containCenter(
+                bounds: _franceBounds,
+              ),
               onPositionChanged: _handlePositionChanged,
               // Centrer sur l'utilisateur dès que sa position est disponible
               onMapReady: () {
