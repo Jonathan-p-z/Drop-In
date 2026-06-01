@@ -1,0 +1,2 @@
+ALTER TABLE challenges
+    ADD COLUMN IF NOT EXISTS action_type VARCHAR DEFAULT NULL;
