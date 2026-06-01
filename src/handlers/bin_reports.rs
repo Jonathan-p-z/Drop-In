@@ -83,6 +83,8 @@ pub async fn report_bin(
         .execute(&state.pool)
         .await?;
 
+    super::challenge_progress::increment_challenge_progress(&state.pool, user_id, "report_bin").await?;
+
     Ok((StatusCode::CREATED, Json(report)))
 }
 

@@ -1,6 +1,7 @@
 pub mod auth;
 pub mod bin_reports;
 pub mod bins;
+pub mod challenge_progress;
 pub mod challenges;
 pub mod leaderboard;
 pub mod photos;

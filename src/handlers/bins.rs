@@ -166,5 +166,7 @@ pub async fn create_bin(
 
     tx.commit().await?;
 
+    super::challenge_progress::increment_challenge_progress(&state.pool, user_id, "add_bin").await?;
+
     Ok((StatusCode::CREATED, Json(BinResponse::from_bin(bin, payload.waste_types))))
 }
